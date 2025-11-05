@@ -3,34 +3,23 @@ const mongoose = require('mongoose');
 const messageSchema = new mongoose.Schema({
   sender: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
+    ref: 'User'
   },
-  receiver: {  // For personal chats (one-to-one messages)
+  receiver: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true,
-    default: null
+    ref: 'User'
   },
-  groupId: {  // For group chats, references the group
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Chat',
-    default: null
-  },
-  message: {
-    type: String,
-    default: ''  // Optional for media messages
-  },
-  mediaPath: {  // Path for image/video/audio/file
-    type: String,
-    default: null
-  },
+  message: String,
   messageType: {
     type: String,
-    enum: ['text', 'image', 'video', 'audio', 'file'],
+    enum: ['text', 'image', 'video'],
     default: 'text'
   },
-  status: {  // Track sent/delivered/read
+  chatId: {  // This is where chatId is saved to link the message to the specific chat
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Chat'
+  },
+  status: {
     type: String,
     enum: ['sent', 'delivered', 'read'],
     default: 'sent'
@@ -39,6 +28,7 @@ const messageSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  mediaPath: String,
   timestamp: {
     type: Date,
     default: Date.now

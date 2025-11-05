@@ -1,70 +1,79 @@
-const {Message} = require('../../../models/Message');
+const { Message } = require('../../../models/Message');
+const { Chat } = require('../../../models/Chat');
 const fs = require('fs');
 const path = require('path');
 
-// Send Message Function
-
+// Send Message
 const sendMessage = async (req, res) => {
   try {
-    const { senderId, receiverId, message, messageType, groupId } = req.body;
+    const { senderId, receiverId, message, messageType, chatId, groupId } = req.body;
     let mediaPath = null;
 
-    // Handle media upload if file exists
+    // Step 1: Check if the chat already exists (direct chat between sender and receiver)
+    let chat;
+
+    // If chatId is not provided, look for an existing chat
+    if (!chatId) {
+      // Look for a chat between the two users (either sender and receiver or receiver and sender)
+      chat = await Chat.findOne({
+        type: 'direct',
+        users: { $all: [senderId, receiverId], $size: 2 }
+      });
+
+      // Step 2: If chat doesn't exist, create a new one
+      if (!chat) {
+        chat = new Chat({
+          users: [senderId, receiverId],
+          type: 'direct'
+        });
+        await chat.save();  // Save the new chat
+      }
+    } else {
+      // If chatId is provided, use the existing chatId
+      chat = await Chat.findById(chatId);
+      if (!chat) {
+        return res.status(404).json({ success: false, message: 'Chat not found' });
+      }
+    }
+
+    // Step 3: Ensure chat.messages is initialized
+    if (!chat.messages) {
+      chat.messages = []; // Initialize the messages array if it's undefined
+    }
+
+    // Step 4: Handle media upload if any (for non-text messages)
     if (req.file && messageType !== 'text') {
       const uploadDir = path.join(__dirname, '../../../../public/messages');
       if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 
       const filename = Date.now() + '-' + req.file.originalname;
-      const filePath = path.join(uploadDir, filename);
-
-      // Save file to disk
-      fs.writeFileSync(filePath, req.file.buffer);
-
-      // Update mediaPath to the location of the file
-      mediaPath = `public/messages/${filename}`;
+      fs.writeFileSync(path.join(uploadDir, filename), req.file.buffer);
+      mediaPath = `public/messages/${filename}`;  // store relative path to the uploaded media
     }
 
-    // Check if it's a group chat (groupId is provided)
-    if (groupId) {
-      // In case of group chat, `receiverId` will be an array of user IDs
-      const receivers = receiverId;  // Expecting receiverId to be an array
-
-      // Send the message to all users in the group
-      for (const receiver of receivers) {
-        const newMessage = new Message({
-          sender: senderId,
-          receiver: receiver,
-          groupId,  // Add the group ID to each message
-          message: message || '',  // Empty message if media is sent
-          messageType: messageType || 'text',
-          mediaPath
-        });
-        await newMessage.save();  // Save each message to the database
-      }
-
-      return res.status(200).json({
-        success: true,
-        message: 'Group message sent to all users',
-      });
-    }
-
-    // Personal chat: One-to-One message
+    // Step 5: Create the message
     const newMessage = new Message({
       sender: senderId,
-      receiver: receiverId,
-      message: message || '',  // Empty message if media is sent
+      receiver: groupId ? null : receiverId, // null for group messages
+      groupId: groupId || null,
+      chatId: chat._id, // link message to the chat
+      message: message || '',
       messageType: messageType || 'text',
       mediaPath
     });
 
-    // Save message to the database
     await newMessage.save();
+
+    // Step 6: Link the message to the chat
+    chat.messages.push(newMessage._id);  // Add the message ID to the messages array
+    await chat.save();
 
     return res.status(200).json({
       success: true,
-      message: 'Personal message sent',
+      message: 'Message sent successfully',
       data: newMessage
     });
+
   } catch (error) {
     return res.status(500).json({
       success: false,
@@ -73,7 +82,4 @@ const sendMessage = async (req, res) => {
   }
 };
 
-
-
-
-module.exports = {sendMessage}
+module.exports = { sendMessage };

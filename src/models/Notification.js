@@ -1,6 +1,14 @@
 const mongoose = require('mongoose');
 
 const notificationSchema = new mongoose.Schema({
+    enabled:{
+type: Boolean,
+default: true
+    },
+    removed:{
+type: Boolean,
+default: false
+    },
     user:{
         type: mongoose.Schema.Types.ObjectId,
         ref:'User'                // User receiving the notification

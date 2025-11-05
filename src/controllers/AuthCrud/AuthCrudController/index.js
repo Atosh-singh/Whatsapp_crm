@@ -1,6 +1,6 @@
-const {loginUser} = require('./login');
+const {generateOtp, loginUser} = require('./login');
 
 
 module.exports ={
-    loginUser
+   generateOtp, loginUser
 }

@@ -1,9 +1,12 @@
 const express = require('express');
 
+
 const router = express.Router();
+const {loginUser,generateOtp } = require('../controllers/AuthCrud/AuthCrudController/login')
 
-const {loginUser} = require('../controllers/AuthCrud/AuthCrudController');
 
+// Routes
+router.post('/generate-otp', generateOtp);
 router.post('/login', loginUser)
 
 

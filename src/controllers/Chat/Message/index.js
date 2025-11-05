@@ -1,4 +1,5 @@
-const { sendMessage}= require('./sendMessage');
-const { fetchMessages} = require('./fetchMessages');
+const {sendMessage }= require('./sendMessage');
+const {fetchMessages } = require('./fetchMessages');
 
-module.exports = {sendMessage, fetchMessages}
+module.exports = {sendMessage, fetchMessages};
+

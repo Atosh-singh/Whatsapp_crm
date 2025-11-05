@@ -5,6 +5,10 @@ const chatSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  removed: {  // Changed to boolean
+    type: Boolean,
+    default: false
+  },
   users: [{  // Users in this chat (for both personal and group chats)
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
@@ -17,6 +21,11 @@ const chatSchema = new mongoose.Schema({
     type: String,
     enum: ['direct', 'group'],
     default: 'direct'
+  },
+  groupId: {  // For group chats, reference to the Group model
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Group',
+    default: null  // Only set for group chats
   },
   groupName: {  // Only for group chats
     type: String
